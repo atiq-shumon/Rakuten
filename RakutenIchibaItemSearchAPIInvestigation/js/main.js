@@ -1,3 +1,22 @@
+var utility = {
+    isValidObj: function(o) {
+        return (typeof o != 'undefined' && typeof o == 'object') ? true : false;
+    },
+    getFirstProp: function(o) {
+        for (var key in o) {
+            return o[key];
+        }
+    },
+    getImageUrl: function(o) {
+        if (this.isValidObj(o)) {
+            return this.isValidObj(this.getFirstProp(o)) ? this.getFirstProp(o).imageUrl : '';
+        } else {
+            return '';
+        }
+
+    }
+}
+
 function loadDoc(url, cFunc) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
@@ -11,19 +30,21 @@ function loadDoc(url, cFunc) {
 
 function getProductCategory(xhr) {
     var ddl = document.getElementById('ddl');
-    var jsonObj = JSON.parse(xhr.responseText);
+    if (utility.isValidObj(ddl)) {
+        var jsonObj = JSON.parse(xhr.responseText);
 
-    for (var i = 0; i < Object.keys(jsonObj.children).length; i++) {
-        var obj = jsonObj.children[i];
-        for (var key in obj) {
-            var ky = obj[key].genreId;
-            var value = obj[key].genreName;
-            var option = document.createElement('option');
-            option.text = value;
-            option.value = ky;
-            ddl.add(option, 0);
+        for (var i = 0; i < jsonObj.children.length; i++) {
+            var obj = jsonObj.children[i];
+            for (var key in obj) {
+                var ky = obj[key].genreId;
+                var value = obj[key].genreName;
+                var option = document.createElement('option');
+                option.text = value;
+                option.value = ky;
+                ddl.add(option, 0);
+            }
+
         }
-
     }
     //  console.log(Object.keys(jsonObj.children.child).length);
     //document.getElementById('demo').innerHTML = xhr.responseText;
@@ -33,11 +54,11 @@ function getProduct(xhr) {
     var jsonObj = JSON.parse(xhr.responseText);
     var col = '';
 
-    for (var i = 0; i < Object.keys(jsonObj.Items).length; i++) {
+    for (var i = 0; i < jsonObj.Items.length; i++) {
         var obj = jsonObj.Items[i];
         for (var key in obj) {
             var value = obj[key].itemName;
-            var imageUrl = obj[key].smallImageUrls[Object.keys(obj[key].smallImageUrls)[0]].imageUrl;
+            var imageUrl = utility.getImageUrl((obj[key].smallImageUrls)) != '' ? utility.getImageUrl((obj[key].smallImageUrls)) : '#';
             col += '<div class="col-md-3"><a href="#" class="thumbnail"><img style="height:100px;width:100px" src=' + imageUrl.substring(0, imageUrl.lastIndexOf("?")) + ' alt="' + value + '"><p class=prodDesc>' + value + '</p></a></div>';
         }
     }
@@ -46,9 +67,11 @@ function getProduct(xhr) {
 }
 
 function search(so, go) {
-    if (so.value) {
-        loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '&sort=%2BitemPrice', getProduct);
-    } else if (go.value) {
+    document.getElementById('itemsRow').innerHTML = '';
+    if (so.value != '') {
+        // console.log('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '& genreId=' + go.value + '&sort=%2BitemPrice');
+        loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '& genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
+    } else if (go.value != '' && so.value == '') {
         loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
     }
 }
@@ -60,7 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var searchObj = document.getElementById("searchTxt");
     var genereObj = document.getElementById("ddl");
     var searchBtn = document.getElementById("btnSearch");
-    searchBtn.addEventListener("click", function() { search(searchObj, genereObj) }, false);
+    if (utility.isValidObj(searchBtn) && utility.isValidObj(genereObj) && utility.isValidObj(searchObj)) {
+        searchBtn.addEventListener("click", function() { search(searchObj, genereObj) }, false);
+    }
 
 
 }, false);

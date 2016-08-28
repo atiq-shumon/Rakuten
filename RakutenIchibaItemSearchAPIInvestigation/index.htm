@@ -12,29 +12,31 @@
         <h1>Rakuten Ichiba API Investigation</h1>
         <p>Search products using api</p>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-sm-4">
-                <!-- <p id="demo" style='padding:3px;margin:2px;'> Product Category</p> -->
-                <select id="ddl" class="custom-dropdown">
-                    <option value="0">Select Product Category</option>
-                </select>
-            </div>
-            <div class="col-sm-8">
-                <div class="input-group">
-                    <input type='text' class="form-control" placeholder="Search for...." id='searchTxt'>
-                    <span class="input-group-btn">
+    <form action="#" enctype="text/plain">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-4">
+                    <!-- <p id="demo" style='padding:3px;margin:2px;'> Product Category</p> -->
+                    <select id="ddl" class="custom-dropdown">
+                        <option value="0">Select Product Category</option>
+                    </select>
+                </div>
+                <div class="col-sm-8">
+                    <div class="input-group">
+                        <input type='text' class="form-control" placeholder="Search for...." id='searchTxt'>
+                        <span class="input-group-btn">
                            <button type="button" class="btn btn-secondary" id="btnSearch" autofocus> Go!!</button>
                        </span>
-                    </input>
+                        </input>
+                    </div>
                 </div>
             </div>
+            <br/>
+            <div id='itemsRow' class='row'>
+                <!-- <p>Macthed Items:</p> -->
+            </div>
         </div>
-        <br/>
-        <div id='itemsRow' class='row'>
-            <!-- <p>Macthed Items:</p> -->
-        </div>
-    </div>
+    </form>
 </body>
 
 </html>
