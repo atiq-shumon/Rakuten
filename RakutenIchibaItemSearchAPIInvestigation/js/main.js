@@ -1,6 +1,6 @@
 var utility = {
     isValidObj: function(o) {
-        return (typeof o != 'undefined' && typeof o == 'object') ? true : false;
+        return (typeof o !== 'undefined' && typeof o === 'object') ? true : false;
     },
     getFirstProp: function(o) {
         for (var key in o) {
@@ -59,21 +59,37 @@ function getProduct(xhr) {
         for (var key in obj) {
             var value = obj[key].itemName;
             var imageUrl = utility.getImageUrl((obj[key].smallImageUrls)) != '' ? utility.getImageUrl((obj[key].smallImageUrls)) : '#';
-            col += '<div class="col-md-3"><a href="#" class="thumbnail"><img style="height:100px;width:100px" src=' + imageUrl.substring(0, imageUrl.lastIndexOf("?")) + ' alt="' + value + '"><p class=prodDesc>' + value + '</p></a></div>';
+            col += '<div class="col-md-3"><a href="#" class="thumbnail items"><img style="height:100px;width:100px" src=' + imageUrl.substring(0, imageUrl.lastIndexOf("?")) + ' alt="' + value + '"><p class=prodDesc>' + value + '</p></a></div>';
         }
     }
 
-    document.getElementById('itemsRow').innerHTML = col;
+    var itemsDiv = document.getElementById('itemsRow');
+    itemsDiv.innerHTML = col;
+    //calling Pager class
+    var itemObjs = document.getElementsByClassName('items');
+    var pager = new Pager(itemObjs, 5, 'pager');
+    pager.showPage(1);
+
 }
 
 function search(so, go) {
-    document.getElementById('itemsRow').innerHTML = '';
-    if (so.value != '') {
-        // console.log('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '& genreId=' + go.value + '&sort=%2BitemPrice');
-        loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '& genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
-    } else if (go.value != '' && so.value == '') {
-        loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
+    if (utility.isValidObj(document.getElementById('itemsRow'))) {
+        document.getElementById('itemsRow').innerHTML = '';
+        var pager = document.getElementById('pager');
+        if (pager) {
+            pager.innerHTML = '';
+        }
+        if (so.value != '') {
+            // console.log('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '& genreId=' + go.value + '&sort=%2BitemPrice');
+            loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '&genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
+        } else if (go.value != '' && so.value == '') {
+            loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
+        }
+
+
     }
+
+
 }
 // window.addEventListener("load", );
 
@@ -86,6 +102,5 @@ document.addEventListener('DOMContentLoaded', function() {
     if (utility.isValidObj(searchBtn) && utility.isValidObj(genereObj) && utility.isValidObj(searchObj)) {
         searchBtn.addEventListener("click", function() { search(searchObj, genereObj) }, false);
     }
-
 
 }, false);
