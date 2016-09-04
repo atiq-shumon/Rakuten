@@ -152,6 +152,10 @@ h1 {
     font-size: 30px;
 }
 
+.col-md-3 {
+    min-height: 0px;
+}
+
 .custom-dropdown {
     -webkit-appearance: none;
     /*REMOVES DEFAULT CHROME & SAFARI STYLE*/
@@ -180,4 +184,40 @@ h1 {
     /*white-space: nowrap;*/
     text-overflow: ellipsis;
     width: 100%;
+}
+
+.pg-normal {
+    color: black;
+    padding: 6px 15px;
+    margin: 4px;
+    font-weight: normal;
+    text-decoration: none;
+    cursor: pointer;
+    background: lightgray;
+}
+
+.pg-normal:hover {
+    color: white;
+    background: black;
+}
+
+.pg-selected {
+    color: white;
+    padding: 6px 15px;
+    margin: 4px;
+    background: black;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.row-centered {
+    /*text-align:center;*/
+}
+
+.col-centered {
+    position: relative;
+    float: none;
+    margin: 0 auto;
+    vertical-align: middle;
+    text-align: center;
 }
