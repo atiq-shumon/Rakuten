@@ -1,39 +1,74 @@
-function Pager(items, itemsPerPage, pagerId) {
+function Pager(searchObj, genereObj, itemsCount, pageCount, itemsPerPage, pagerId, container) {
     this.itemsPerPage = itemsPerPage;
     this.currentPage = 1;
-    this.pages = Math.ceil(items.length / itemsPerPage);
+    this.pages = pageCount;
     this.initiated = false;
-    this.itemCount = items.length;
-    this.items = items;
+    this.itemCount = itemsCount;
+    this.container = container;
+    this.searchObj = searchObj;
+    this.genereObj = genereObj;
     this.pagerId = pagerId;
     var self = this;
-    this.addPager = function() {
-        this.items[0].parentNode.parentNode.insertAdjacentHTML('afterend', '<div class="row row-centered" id=' + this.pagerId + '></div>');
-    };
-    this.showItems = function(from, to) {
-        for (var i = 0; i < this.itemCount; i++) {
-            if (i < from || i > to) {
-                items[i].style.display = 'none';
-            } else {
-                items[i].style.display = '';
+    this.getPager = function(pagerID) {
+        var pager = document.getElementById(this.pagerId);
+        if (!pager) {
+            this.container.insertAdjacentHTML('afterend', '<div class="row row-centered" id=' + pagerID + '></div>');
+        }
+        return document.getElementById(this.pagerId);
+    }
+    this.pagination = function(c, m) {
+        var current = c,
+            last = m,
+            delta = 2,
+            left = current - delta,
+            right = +current + +delta + 5,
+            range = [],
+            rangeWithDots = [],
+            l;
+
+        for (let i = 1; i <= last; i++) {
+            if (i === 1 || i === last || i >= left && i < right) {
+                range.push(i);
             }
         }
+
+        for (let i of range) {
+            if (l) {
+                if (i - l === 2) {
+                    rangeWithDots.push('<span  class="pg-normal pg-count">' + l + 1 + '</span>');
+                } else if (i - l !== 1) {
+                    rangeWithDots.push('<span  class="pg-normal">' + '...' + '</span>');
+                }
+            }
+            rangeWithDots.push('<span  class="pg-normal pg-count">' + i + '</span>');
+            l = i;
+        }
+
+        return rangeWithDots.join(" ");
+    };
+
+    this.AttachClickEventToPages = function(curPage) {
+        var pageNumbers = document.getElementsByClassName('pg-count');
+        var pages = pageNumbers.length;
+        for (var i = 0; i < pages; i++) {
+            if (pageNumbers[i].innerHTML === curPage.toString()) {
+                utility.addClass('pg-selected', pageNumbers[i]);
+            }
+            utility.addEvent(pageNumbers[i], "click", function() { self.showPage(this.innerHTML) });
+
+        }
+
     };
 
     this.showPage = function(pageNumber) {
 
-        var oldPageAnchor = document.getElementById('pg' + this.currentPage);
-        if (oldPageAnchor)
-            oldPageAnchor.className = 'pg-normal';
-
         this.currentPage = pageNumber;
-        var newPageAnchor = document.getElementById('pg' + this.currentPage);
-        if (newPageAnchor)
-            newPageAnchor.className = 'pg-selected';
+        utility.loadDoc(getApiString(this.genereObj, this.searchObj, pageNumber), reloadProduct);
+        utility.removeChild(document.querySelectorAll('.pg-count'));
 
-        var from = (pageNumber - 1) * itemsPerPage;
-        var to = from + this.itemsPerPage - 1;
-        this.showItems(from, to);
+        document.querySelector("#pg-numbers").innerHTML = this.pagination(this.currentPage, this.pages);
+        this.AttachClickEventToPages(this.currentPage);
+
     };
     this.prev = function() {
         if (this.currentPage > 1) {
@@ -46,36 +81,26 @@ function Pager(items, itemsPerPage, pagerId) {
         }
     };
     if (this.pages > 1) {
-        var pager = document.getElementById(this.pagerId);
-        if (!pager) {
-            self.addPager();
-            var pager = document.getElementById(this.pagerId);
-        }
-
+        var pager = this.getPager(this.pagerId); // create and return pager object
         var pagerHtml = '<span class="pg-normal" id="' + this.pagerId + 'prev">&#171 Prev</span>';
-        for (var page = 1; page <= this.pages; page++) {
-            pagerHtml += '<span id="pg' + page + '" class="pg-normal pg-count">' + page + '</span>';
-        }
+        pagerHtml += '<span id="pg-numbers">';
+        pagerHtml += this.pagination(this.currentPage, this.pages);
+        pagerHtml += '</span>';
         pagerHtml += '<span class="pg-normal" id="' + this.pagerId + 'next"> Next &#187</span>';
+
         pager.innerHTML = '<div class="col-centered  ">' + pagerHtml + '</div>';
+
+        this.AttachClickEventToPages(1);
         var prev = document.getElementById(this.pagerId + "prev");
-        prev.addEventListener("click", function() {
+        utility.addEvent(prev, "click", function() {
             self.prev();
-        }, false);
+        });
+
         var next = document.getElementById(this.pagerId + "next");
-        next.addEventListener("click", function() {
+        utility.addEvent(next, "click", function() {
             self.next();
-        }, false);
+        });
 
 
-        var pageNumbers = document.getElementsByClassName('pg-count');
-        var pages = pageNumbers.length;
-        for (var i = 0; i < pages; i++) {
-
-            pageNumbers[i].addEventListener("click", function() {
-                self.showPage(this.innerHTML);
-            }, false);
-
-        }
     }
 }

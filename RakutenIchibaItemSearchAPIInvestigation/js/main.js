@@ -1,32 +1,91 @@
-var utility = {
-    isValidObj: function(o) {
-        return (typeof o !== 'undefined' && typeof o === 'object') ? true : false;
-    },
-    getFirstProp: function(o) {
-        for (var key in o) {
-            return o[key];
-        }
-    },
-    getImageUrl: function(o) {
-        if (this.isValidObj(o)) {
-            return this.isValidObj(this.getFirstProp(o)) ? this.getFirstProp(o).imageUrl : '';
-        } else {
-            return '';
-        }
+// jshint multistr:true
 
-    }
-}
+// using revealing module  pattern
+// static class methods
+var utility = (function(_W, _D, _N, _L) {
+    'use strict';
+    //private scope
+    var debug = true;
+    return { // public scope
 
-function loadDoc(url, cFunc) {
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            cFunc(xhr);
+        isValidObj: function(o) {
+            return (typeof o !== 'undefined' && typeof o === 'object') ? true : false;
+        },
+        getFirstProp: function(o) {
+            for (var key in o) {
+                return o[key];
+            }
+        },
+        getImageUrl: function(o) {
+            if (this.isValidObj(o)) {
+                return this.isValidObj(this.getFirstProp(o)) ? this.getFirstProp(o).imageUrl : '';
+            } else {
+                return '';
+            }
+
+        },
+        addEvent: function(node, type, handler) {
+            if (node.addEventListener) {
+                node.addEventListener(type, handler, false);
+            } else {
+                node.attachEvent("on" + type, handler);
+            }
+        },
+        removeEvent: function(node, type, handler) {
+            if (node.removeEventListener) {
+                node.removeEventListener(type, handler, false);
+            } else {
+                node.detachEvent("on" + type, handler);
+            }
+        },
+        removeChild: function(el) {
+            if (!this.isValidObj(el)) return;
+            while (el.firstChild) el.removeChild(el.firstChild);
+            return;
+        },
+        addClass: function(classname, el) {
+            if (!this.isValidObj(el)) return;
+            var cn = el.className;
+            //test for existance
+            if (cn.indexOf(classname) != -1) {
+                return;
+            }
+            //add a space if the element already has class
+            if (cn !== '') {
+                classname = ' ' + classname;
+            }
+            el.className = cn + classname;
+        },
+
+        removeClass: function(classname, element) {
+            if (!this.isValidObj(element)) return;
+            var cn = element.className;
+            var rxp = new RegExp("\\s?\\b" + classname + "\\b", "g");
+            cn = cn.replace(rxp, '');
+            element.className = cn;
+        },
+        loadDoc: function(url, cFunc) {
+            _D.body.style.cursor = "progress";
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+
+                    cFunc(xhr);
+                    _D.body.style.cursor = "default";
+
+                }
+            };
+            xhr.open('GET', url);
+            xhr.send();
+        },
+        logError: function(errorMessage) {
+            if (this.debug) {
+                console.log(errorMessage);
+            }
         }
-    }
-    xhr.open('GET', url);
-    xhr.send();
-}
+    }; // end of public scope
+})(window, document, navigator, location);
+//// end of utility
 
 function getProductCategory(xhr) {
     var ddl = document.getElementById('ddl');
@@ -46,61 +105,91 @@ function getProductCategory(xhr) {
 
         }
     }
-    //  console.log(Object.keys(jsonObj.children.child).length);
-    //document.getElementById('demo').innerHTML = xhr.responseText;
+
 }
 
-function getProduct(xhr) {
-    var jsonObj = JSON.parse(xhr.responseText);
+function getProductHTML(jsonObj) {
     var col = '';
 
-    for (var i = 0; i < jsonObj.Items.length; i++) {
+    for (var i = 0, itemsPerPage = jsonObj.Items.length; i < itemsPerPage; i++) {
         var obj = jsonObj.Items[i];
         for (var key in obj) {
             var value = obj[key].itemName;
-            var imageUrl = utility.getImageUrl((obj[key].smallImageUrls)) != '' ? utility.getImageUrl((obj[key].smallImageUrls)) : '#';
+            var imageUrl = utility.getImageUrl((obj[key].smallImageUrls)) !== '' ? utility.getImageUrl((obj[key].smallImageUrls)) : '#';
             col += '<div class="col-md-3"><a href="#" class="thumbnail items"><img style="height:100px;width:100px" src=' + imageUrl.substring(0, imageUrl.lastIndexOf("?")) + ' alt="' + value + '"><p class=prodDesc>' + value + '</p></a></div>';
         }
     }
+    return col;
+}
 
-    var itemsDiv = document.getElementById('itemsRow');
-    itemsDiv.innerHTML = col;
+function getProduct(xhr) {
+
+    var jsonObj = JSON.parse(xhr.responseText);
+    var itemCount = jsonObj.count,
+        pageCount = jsonObj.pageCount,
+        pageNumber = jsonObj.page;
+    var searchObj = document.getElementById("searchTxt"),
+        genereObj = document.getElementById("ddl"),
+        itemsDiv = document.getElementById('itemsRow');
+
+    itemsDiv.innerHTML = getProductHTML(jsonObj);
     //calling Pager class
     var itemObjs = document.getElementsByClassName('items');
-    var pager = new Pager(itemObjs, 5, 'pager');
-    pager.showPage(1);
+
+    var pager = new Pager(searchObj, genereObj, itemCount, pageCount, 30, 'pager', itemsDiv);
+}
+
+function reloadProduct(xhr) {
+    var jsonObj = JSON.parse(xhr.responseText);
+    var itemsDiv = document.getElementById('itemsRow');
+    itemsDiv.innerHTML = getProductHTML(jsonObj);
 
 }
 
-function search(so, go) {
-    if (utility.isValidObj(document.getElementById('itemsRow'))) {
-        document.getElementById('itemsRow').innerHTML = '';
+function getApiString(go, so, pg) {
+    var apiString = '',
+        commonPart = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&';
+    if (so.value !== '') {
+        apiString = commonPart + 'keyword=' + so.value + '&genreId=' + go.value + '&page=' + pg + '&sort=%2BitemPrice';
+    } else if (go.value !== '' && so.value === '') {
+        apiString = commonPart + 'genreId=' + go.value + '&page=' + pg + '&sort=%2BitemPrice';
+    }
+    return apiString;
+
+}
+
+function search(so, go, pg) {
+    var itemsRow = document.getElementById('itemsRow');
+    if (utility.isValidObj(itemsRow)) {
+        itemsRow.innerHTML = '';
         var pager = document.getElementById('pager');
         if (pager) {
             pager.innerHTML = '';
         }
-        if (so.value != '') {
-            // console.log('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '& genreId=' + go.value + '&sort=%2BitemPrice');
-            loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&keyword=' + so.value + '&genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
-        } else if (go.value != '' && so.value == '') {
-            loadDoc('https://app.rakuten.co.jp/services/api/IchibaItem/Search/20140222?applicationId=1077580569659850281&genreId=' + go.value + '&sort=%2BitemPrice', getProduct);
-        }
-
-
+        utility.loadDoc(getApiString(go, so, pg), getProduct);
     }
-
-
 }
-// window.addEventListener("load", );
 
-document.addEventListener('DOMContentLoaded', function() {
+utility.addEvent(document, 'DOMContentLoaded', function() {
     var genereURL = 'https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20120723?applicationId=1077580569659850281&genreId=0';
-    loadDoc(genereURL, getProductCategory);
+    utility.loadDoc(genereURL, getProductCategory);
     var searchObj = document.getElementById("searchTxt");
     var genereObj = document.getElementById("ddl");
     var searchBtn = document.getElementById("btnSearch");
     if (utility.isValidObj(searchBtn) && utility.isValidObj(genereObj) && utility.isValidObj(searchObj)) {
-        searchBtn.addEventListener("click", function() { search(searchObj, genereObj) }, false);
+        utility.addEvent(searchBtn, "click", function() { search(searchObj, genereObj, 1); });
     }
+});
 
-}, false);
+utility.addEvent(window, 'error', function(e) {
+    utility.logError(e);
+    // best practice sending error to server for tracking
+    // var stack = e.error.stack;
+    // var message = e.error.toString();
+    // if (stack) {
+    //     message += '\n' + stack;
+    // }
+    // var xhr = new XMLHttpRequest();
+    // xhr.open('POST', '/log', true);
+    // xhr.send(message);
+});
