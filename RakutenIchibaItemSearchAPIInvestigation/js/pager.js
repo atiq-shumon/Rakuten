@@ -52,9 +52,10 @@ function Pager(searchObj, genereObj, itemsCount, pageCount, itemsPerPage, pagerI
         var pages = pageNumbers.length;
         for (var i = 0; i < pages; i++) {
             if (pageNumbers[i].innerHTML === curPage.toString()) {
-                utility.addClass('pg-selected', pageNumbers[i]);
+                Utility
+.addClass('pg-selected', pageNumbers[i]);
             }
-            utility.addEvent(pageNumbers[i], "click", function() { self.showPage(this.innerHTML) });
+            Utility.addEvent(pageNumbers[i], "click", function() { self.showPage(this.innerHTML) });
 
         }
 
@@ -63,8 +64,8 @@ function Pager(searchObj, genereObj, itemsCount, pageCount, itemsPerPage, pagerI
     this.showPage = function(pageNumber) {
 
         this.currentPage = pageNumber;
-        utility.loadDoc(getApiString(this.genereObj, this.searchObj, pageNumber), reloadProduct);
-        utility.removeChild(document.querySelectorAll('.pg-count'));
+        Utility.loadDoc(getApiString(this.genereObj, this.searchObj, pageNumber), reloadProduct);
+        Utility.removeChild(document.querySelectorAll('.pg-count'));
 
         document.querySelector("#pg-numbers").innerHTML = this.pagination(this.currentPage, this.pages);
         this.AttachClickEventToPages(this.currentPage);
@@ -92,12 +93,12 @@ function Pager(searchObj, genereObj, itemsCount, pageCount, itemsPerPage, pagerI
 
         this.AttachClickEventToPages(1);
         var prev = document.getElementById(this.pagerId + "prev");
-        utility.addEvent(prev, "click", function() {
+        Utility.addEvent(prev, "click", function() {
             self.prev();
         });
 
         var next = document.getElementById(this.pagerId + "next");
-        utility.addEvent(next, "click", function() {
+        Utility.addEvent(next, "click", function() {
             self.next();
         });
 

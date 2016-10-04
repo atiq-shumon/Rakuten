@@ -2,7 +2,7 @@
 
 // using revealing module  pattern
 // static class methods
-var utility = (function(_W, _D, _N, _L) {
+var Utility = (function(_W, _D, _N, _L) {
     'use strict';
     //private scope
     var debug = true;
@@ -47,7 +47,7 @@ var utility = (function(_W, _D, _N, _L) {
             if (!this.isValidObj(el)) return;
             var cn = el.className;
             //test for existance
-            if (cn.indexOf(classname) != -1) {
+            if (cn.indexOf(classname) !== -1) {
                 return;
             }
             //add a space if the element already has class
@@ -78,18 +78,87 @@ var utility = (function(_W, _D, _N, _L) {
             xhr.open('GET', url);
             xhr.send();
         },
-        logError: function(errorMessage) {
-            if (this.debug) {
-                console.log(errorMessage);
+        clearOptionsFast: function(selectObj) {
+            if (selectObj) {
+                // selectObj.length = 0;
+                while (selectObj.options.length) {
+                    selectObj.firstChild.remove(0);
+                }
             }
+        },
+        logError: function(err) {
+            if (debug) {
+                console.log('error:' + err.message);
+            }
+        },
+        isFoundInArray: function(arr, el) {
+            if (arr && el.length) {
+                for (var i = 0, len = arr.length; i < len; i++) {
+                    if (arr[i].toUpperCase().indexOf(el.toUpperCase()) !== -1) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }; // end of public scope
 })(window, document, navigator, location);
-//// end of utility
+//// end of Utility
+
+////// revealing prototype pattern
+var AutoCompleter = function(nm, inputObj, btn, autoFillListObj) {
+    'use strict';
+    this.nm = nm;
+    this.inputObj = inputObj;
+    this.btn = btn;
+    this.autoFillListObj = autoFillListObj;
+};
+AutoCompleter.prototype = function() {
+    'use strict';
+    //private member
+    var isFound = function(nm, item) {
+            var allEntries = JSON.parse(localStorage.getItem(nm));
+            return Utility.isFoundInArray(allEntries, item);
+
+        },
+        addToAutoFill = function(autoFillListObj, items) {
+            Utility.clearOptionsFast(autoFillListObj);
+            for (var i = 0, len = items.length; i < len; i++) {
+
+                var opt = document.createElement('option');
+                opt.value = items[i];
+                // opt.text = "laptop";
+                autoFillListObj.appendChild(opt);
+
+            }
+
+        },
+        addToLocalStorage = function(nm, item, autoFillListObj) {
+            if (!isFound(nm, item) && item !== "") {
+                var allEntries = JSON.parse(localStorage.getItem(nm)) || [];
+                allEntries.push(item);
+                localStorage.setItem(nm, JSON.stringify(allEntries));
+                addToAutoFill(autoFillListObj, allEntries);
+            }
+        },
+        init = function() {
+            var self = this;
+            var allEntries = JSON.parse(localStorage.getItem(this.nm)) || [];
+            addToAutoFill(this.autoFillListObj, allEntries);
+            Utility.addEvent(this.btn, 'click', function(e) { addToLocalStorage(self.nm, document.getElementById(self.inputObj.id).value, self.autoFillListObj) });
+
+        },
+        remove = function() {};
+
+    return {
+        init: init
+    }
+}();
+//////end of Auto Completer
 
 function getProductCategory(xhr) {
     var ddl = document.getElementById('ddl');
-    if (utility.isValidObj(ddl)) {
+    if (Utility.isValidObj(ddl)) {
         var jsonObj = JSON.parse(xhr.responseText);
 
         for (var i = 0; i < jsonObj.children.length; i++) {
@@ -115,7 +184,7 @@ function getProductHTML(jsonObj) {
         var obj = jsonObj.Items[i];
         for (var key in obj) {
             var value = obj[key].itemName;
-            var imageUrl = utility.getImageUrl((obj[key].smallImageUrls)) !== '' ? utility.getImageUrl((obj[key].smallImageUrls)) : '#';
+            var imageUrl = Utility.getImageUrl((obj[key].smallImageUrls)) !== '' ? Utility.getImageUrl((obj[key].smallImageUrls)) : '#';
             col += '<div class="col-md-3"><a href="#" class="thumbnail items"><img style="height:100px;width:100px" src=' + imageUrl.substring(0, imageUrl.lastIndexOf("?")) + ' alt="' + value + '"><p class=prodDesc>' + value + '</p></a></div>';
         }
     }
@@ -160,29 +229,37 @@ function getApiString(go, so, pg) {
 
 function search(so, go, pg) {
     var itemsRow = document.getElementById('itemsRow');
-    if (utility.isValidObj(itemsRow)) {
+    if (Utility.isValidObj(itemsRow)) {
         itemsRow.innerHTML = '';
         var pager = document.getElementById('pager');
         if (pager) {
             pager.innerHTML = '';
         }
-        utility.loadDoc(getApiString(go, so, pg), getProduct);
+        Utility.loadDoc(getApiString(go, so, pg), getProduct);
     }
 }
 
-utility.addEvent(document, 'DOMContentLoaded', function() {
+Utility.addEvent(document, 'DOMContentLoaded', function() {
     var genereURL = 'https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20120723?applicationId=1077580569659850281&genreId=0';
-    utility.loadDoc(genereURL, getProductCategory);
+    Utility.loadDoc(genereURL, getProductCategory);
     var searchObj = document.getElementById("searchTxt");
     var genereObj = document.getElementById("ddl");
     var searchBtn = document.getElementById("btnSearch");
-    if (utility.isValidObj(searchBtn) && utility.isValidObj(genereObj) && utility.isValidObj(searchObj)) {
-        utility.addEvent(searchBtn, "click", function() { search(searchObj, genereObj, 1); });
+    if (Utility.isValidObj(searchBtn) && Utility.isValidObj(genereObj) && Utility.isValidObj(searchObj)) {
+        Utility.addEvent(searchBtn, "click", function() {
+            search(searchObj, genereObj, 1);
+
+        });
+        var autoFillListObj = document.getElementById("productsAutoFill");
+        var myAutoCompleter = new AutoCompleter('prods', searchObj, searchBtn, autoFillListObj);
+        myAutoCompleter.init();
     }
+
+
 });
 
-utility.addEvent(window, 'error', function(e) {
-    utility.logError(e);
+Utility.addEvent(window, 'error', function(e) {
+    Utility.logError(e);
     // best practice sending error to server for tracking
     // var stack = e.error.stack;
     // var message = e.error.toString();
